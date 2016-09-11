@@ -38,7 +38,7 @@ simple, but for language where this is not the case, this variable
 provides a way to simplify things on the user side.
 For example, there is no ocaml-mode in Emacs, but the mode to use is
 `tuareg-mode'."
-  :group 'org-edit-structure
+  :group 'sphinx
   :type '(repeat
       (cons
        (string "Language name")

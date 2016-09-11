@@ -27,6 +27,11 @@
 
 (require 'sphinx-src)
 
+(defgroup sphinx
+  "Sphinx group."
+  :group 'editing
+  :prefix "sphinx-")
+
 (defun sphinx-fontify-code-block (limit)
   "Fontify code blocks from point to LIMIT."
   (condition-case nil
