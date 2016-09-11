@@ -51,6 +51,7 @@
            '(:inherit fixed-pitch :background "#232a2b") 'append)))
     (error nil)))
 
+;;;###autoload
 (define-minor-mode sphinx-mode
   "Sphinx minor mode."
   :init-value nil
