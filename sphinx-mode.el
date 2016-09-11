@@ -27,7 +27,7 @@
 
 (require 'sphinx-src)
 
-(defgroup sphinx
+(defgroup sphinx ()
   "Sphinx group."
   :group 'editing
   :prefix "sphinx-")
