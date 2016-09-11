@@ -44,7 +44,7 @@
           (while (progn
                    (forward-line)
                    (looking-at prefix-search)))
-          (setq block-end (progn (forward-line) (point)))
+          (setq block-end (point))
           (sphinx-src-font-lock-fontify-block lang block-start block-end)
           (add-face-text-property
            block-highlight-start block-end
