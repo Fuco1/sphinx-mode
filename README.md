@@ -10,7 +10,7 @@ In your `rst-mode` buffer call `M-x sphinx-mode` to add all the extra features.
 
 **TODO**
 
-* [✓] Add fontification support
+* [x] Add fontification support
 * [ ] Add support for insertion of labels
 * [ ] Add support for insertion of references (`:ref:`) (with a menu of available labels)
 * [ ] Add support for jumping to a label/reference
