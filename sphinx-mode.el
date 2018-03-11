@@ -35,7 +35,7 @@
 (defun sphinx-fontify-code-block (limit)
   "Fontify code blocks from point to LIMIT."
   (condition-case nil
-      (while (re-search-forward "^\.\. code-block:: \\(.*?\\)\n\n\\( +\\)" limit t)
+      (while (re-search-forward "\.\. code-block:: \\(.*?\\)\n\n\\( +\\)" limit t)
         (let* ((block-start (match-end 0))
                (block-highlight-start (match-beginning 2))
                (lang (match-string 1))
