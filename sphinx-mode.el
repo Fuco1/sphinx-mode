@@ -24,7 +24,11 @@
 
 ;;; Code:
 
+(require 'rst)
+
+(require 'dash)
 (require 'f)
+(require 's)
 (require 'sphinx-src)
 
 (defgroup sphinx ()
@@ -36,26 +40,61 @@
   '((t (:inherit fixed-pitch)))
   "Face used for code blocks.")
 
-(defun sphinx-fontify-code-block (limit)
-  "Fontify code blocks from point to LIMIT."
-  (condition-case nil
-      (while (re-search-forward "\.\. code-block:: \\(.*?\\)\n\n\\( +\\)" limit t)
-        (let* ((block-start (match-end 0))
-               (block-highlight-start (match-beginning 2))
-               (lang (match-string 1))
-               (prefix (match-string 2))
-               (prefix-search (concat "^" prefix))
-               block-end)
-          (while (progn
-                   (forward-line)
-                   (looking-at prefix-search)))
-          (setq block-end (point))
-          (sphinx-src-font-lock-fontify-block lang block-start block-end)
-          (add-face-text-property
-           block-highlight-start block-end
-           'sphinx-code-block-face 'append)))
-    (error nil)))
+(defvar sphinx-code-block-default-language "python"
+  "The default language used for highlighting code blocks.")
 
+(defun sphinx--fontify-code-blocks (limit)
+  "Fontify code blocks from point to LIMIT."
+  (save-excursion
+    ;; This is for the ‘.. code-block::’ syntax.
+    (while (re-search-forward "\.\. code-block::" limit t)
+      (let* ((language
+              (s-trim (buffer-substring-no-properties (point) (line-end-position))))
+             (end (sphinx--fontify-block (point) language)))
+        (goto-char end))))
+  (save-excursion
+    ;; This is for the ‘Here is some code::’ syntax.
+    (while (re-search-forward "::$" limit t)
+      (let ((line-is-rst-directive
+             (save-excursion
+               (back-to-indentation)
+               (looking-at-p "\.\. ")))
+            end)
+        (unless line-is-rst-directive
+          (setq end (sphinx--fontify-block (point)))
+          (goto-char end))))))
+
+(defun sphinx--fontify-block (beg &optional language)
+  "Fontify indented block starting after BEG using LANGUAGE.
+
+BEG should be on the line that ‘announces’ the block, e.g. the line
+containing ‘.. code-block::’ or ending with ‘::’."
+  (when (or (null language) (string-equal language ""))
+    (setq language sphinx-code-block-default-language))
+  (save-excursion
+    (goto-char beg)
+    (let* ((indent
+            (progn
+              (back-to-indentation)
+              (+ 2 (current-column))))
+           (highlight-beg
+            (progn
+              (forward-line)
+              (while (and (looking-at-p "$") (not (eobp)))
+                (forward-line))
+              (point)))
+           (highlight-end
+            (progn
+              (unless (rst-forward-indented-block indent)
+                (goto-char (point-max)))
+              (point))))
+      (condition-case nil
+          (sphinx-src-font-lock-fontify-block
+           language highlight-beg highlight-end)
+        (error nil))
+      (add-face-text-property
+       highlight-beg highlight-end 'sphinx-code-block-face 'append)
+      highlight-end)))
 
 (defun sphinx--get-refs-from-buffer (&optional buffer)
   "Get all refs from BUFFER.
@@ -106,6 +145,7 @@ If BUFFER is not given use the `current-buffer'."
 
 ;; TODO: add better default
 (defun sphinx-goto-ref (ref)
+  "Go to reference REF."
   (interactive
    (let ((ref (completing-read
                (format "Ref [default %s]: "
@@ -134,8 +174,8 @@ If BUFFER is not given use the `current-buffer'."
   :keymap 'sphinx-mode-map
   ;; add native fontification support
   (if sphinx-mode
-      (font-lock-add-keywords nil '((sphinx-fontify-code-block)))
-    (font-lock-remove-keywords nil '((sphinx-fontify-code-block)))))
+      (font-lock-add-keywords nil '((sphinx--fontify-code-blocks)))
+    (font-lock-remove-keywords nil '((sphinx--fontify-code-blocks)))))
 
 (provide 'sphinx-mode)
 ;;; sphinx-mode.el ends here

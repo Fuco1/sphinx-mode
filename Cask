@@ -6,6 +6,7 @@
 
 (depends-on "dash" "2.12.1")
 (depends-on "f")
+(depends-on "s")
 
 (development
   (depends-on "buttercup")
