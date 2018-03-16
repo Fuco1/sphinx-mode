@@ -17,6 +17,7 @@ In your `rst-mode` buffer call `M-x sphinx-mode` to add all the extra features.
 
 ## Native code-block fontification
 
-Similar to `org-mode`, we provide native emacs fontification of code blocks.
+Similar to `org-mode`, we provide native emacs fontification of code blocks,
+which can be tweaked by changing `sphinx-code-block-face`.
 
 ![fontification](docs/_images/native-fontification.png)

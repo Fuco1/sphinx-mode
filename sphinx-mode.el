@@ -32,6 +32,10 @@
   :group 'editing
   :prefix "sphinx-")
 
+(defface sphinx-code-block-face
+  '((t (:inherit fixed-pitch)))
+  "Face used for code blocks.")
+
 (defun sphinx-fontify-code-block (limit)
   "Fontify code blocks from point to LIMIT."
   (condition-case nil
@@ -49,7 +53,7 @@
           (sphinx-src-font-lock-fontify-block lang block-start block-end)
           (add-face-text-property
            block-highlight-start block-end
-           '(:inherit fixed-pitch :background "#232a2b") 'append)))
+           'sphinx-code-block-face 'append)))
     (error nil)))
 
 
