@@ -39,23 +39,29 @@
 (defun sphinx-fontify-code-block (limit)
   "Fontify code blocks from point to LIMIT."
   (condition-case nil
-      (while (re-search-forward "\.\. code-block:: \\(.*?\\)\n\n\\( +\\)" limit t)
+      (while (re-search-forward (concat "\\.\\. \\(.*?\\)::[[:blank:]]*\\(.*?\\)\n"
+                                        "\\([[:blank:]]*:.*?:.*?\n\\)*"
+                                        "\n\\( +\\)")
+                                limit t)
         (let* ((block-start (match-end 0))
-               (block-highlight-start (match-beginning 2))
-               (lang (match-string 1))
-               (prefix (match-string 2))
-               (prefix-search (concat "^" prefix))
+               (block-highlight-start (match-beginning 4))
+               (directive (match-string 1))
+               (value (match-string 2))
+               (prefix (match-string 4))
+               (prefix-search (format "^\\(%s\\|[[:blank:]]*$\\)" prefix))
                block-end)
-          (while (progn
-                   (forward-line)
-                   (looking-at prefix-search)))
-          (setq block-end (point))
-          (sphinx-src-font-lock-fontify-block lang block-start block-end)
-          (add-face-text-property
-           block-highlight-start block-end
-           'sphinx-code-block-face 'append)))
+          (if (assoc directive sphinx-src-directive-mode-function)
+              (progn
+                (while (progn
+                         (forward-line)
+                         (and (< (point) (point-max))
+                              (looking-at prefix-search))))
+                (setq block-end (point))
+                (sphinx-src-font-lock-fontify-block directive value block-start block-end)
+                (add-face-text-property
+                 block-highlight-start block-end
+                 'sphinx-code-block-face 'append)))))
     (error nil)))
-
 
 (defun sphinx--get-refs-from-buffer (&optional buffer)
   "Get all refs from BUFFER.
