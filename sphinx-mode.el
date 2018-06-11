@@ -29,6 +29,7 @@
 (require 'f)
 (require 'dash)
 (require 'sphinx-src)
+(require 'subr-x)
 
 (defgroup sphinx ()
   "Sphinx group."
@@ -122,10 +123,49 @@ If BUFFER is not given use the `current-buffer'."
     (find-file (plist-get target :file))
     (goto-char (plist-get target :point))))
 
+(defun sphinx-compile-find-makefile-dir () ; adapted from rst-compile-find-conf
+  "Look for the Sphinx Makefile in parents of the current path and returns the directory which contains it as a string."
+  (interactive)
+  (let ((file-name "Makefile")
+        (buffer-file (buffer-file-name)))
+    ;; Move up in the dir hierarchy till we find Makefile.
+    (let* ((dir (file-name-directory buffer-file))
+	   (prevdir nil))
+      (while (and (or (not (string= dir prevdir))
+		      (setq dir nil)
+		      nil)
+                  (not (file-exists-p (concat dir file-name))))
+        ;; Move up to the parent dir and try again.
+	(setq prevdir dir)
+        (setq dir (expand-file-name (file-name-directory
+                                     (directory-file-name
+				      (file-name-directory dir))))))
+      (or (and dir (concat dir "")) nil))))
+
+;; TODO: replace this with sphinx-compile and sphinx-compile-and-view
+(defun sphinx-view-build-html ()
+  "Runs 'make html' in project root directory and then views compiled HTML of current source file."
+  (interactive)
+    (let
+      (
+       (buffer-name-base (file-name-base (buffer-name))) ; reads name of current bufer (presumably a .rst file), minus extension, into buffer-name-base
+       (project-root-dir (sphinx-compile-find-makefile-dir)) ; finds parent directory containing makefile and reads into project-root-dir
+       )
+      (let
+	  (
+	   (file-rel-path (string-remove-prefix project-root-dir (file-name-directory buffer-file-name)))
+	   )
+        (shell-command (concat "make -C " project-root-dir " html"))
+	(browse-url (concat (concat (concat project-root-dir "_build/html/" file-rel-path) buffer-name-base) ".html"))
+	)
+    )
+  )
+
 (defvar sphinx-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "M-'") 'sphinx-goto-ref)
     (define-key map (kbd "C-c TAB") 'sphinx-insert-ref)
+    (define-key map (kbd "C-c C-c C-v") 'sphinx-view-build-html)
     map)
   "Sphinx-mode keymap.")
 
