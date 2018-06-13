@@ -109,7 +109,7 @@ If BUFFER is not given use the `current-buffer'."
 
 ;; TODO: add better default
 (defun sphinx-goto-ref (ref)
-  (interactive
+  (interactive)
    (let ((ref (completing-read
                (format "Ref [default %s]: "
                        (symbol-at-point))
@@ -117,52 +117,30 @@ If BUFFER is not given use the `current-buffer'."
                        (plist-get r :name))
                      (sphinx--get-refs))
                nil nil nil nil (symbol-at-point))))
-     (list ref)))
+     (list ref))
   (-when-let (target (--first (equal (plist-get it :name) ref) (sphinx--get-refs)))
     (find-file (plist-get target :file))
     (goto-char (plist-get target :point))))
 
 (defun sphinx-compile ()
-  "Runs 'make' in project root directory, prompting user for target format. Run 'make help' to see list of target formats."
+  "Run 'make' in project root directory and prompt user for target format.
+
+Return absolute path of compiled version of current source file.
+
+To see list of target formats, run 'make help' in a shell."
   (interactive)
-    (let
-      (
-       (buffer-name-base (file-name-base (buffer-file-name)))
+    (let ((buffer-name-base (file-name-base (buffer-file-name)))
        (project-root-dir (locate-dominating-file buffer-file-name "Makefile"))
-       (target-format (read-from-minibuffer "Make (default html): " nil nil nil nil "html" nil))
-       )
-      (let
-	  (
-	   (file-rel-path (file-relative-name buffer-file-name project-root-dir))
-	   )
-        (shell-command (concat "make -C " project-root-dir " " target-format)))))
+       (target-format (read-string "Make (default html): " nil nil "html" nil)))
+      (let* ((file-rel-path (file-relative-name buffer-file-name project-root-dir))
+(build-directory (expand-file-name (concat project-root-dir "_build/" target-format "/"))))
+	(shell-command (concat "make -C " project-root-dir " " target-format))
+	(concat build-directory (car (file-name-all-completions (file-name-base file-rel-path) build-directory))))))
 
 (defun sphinx-compile-and-view ()
-  "Runs sphinx-compile and then views compiled version of current source file."
+  "Run ‘sphinx-compile’ and view compiled version of current source file with 'xdg-open'."
   (interactive)
-    (let
-      (
-       (buffer-name-base (file-name-base (buffer-file-name)))
-       (project-root-dir (locate-dominating-file buffer-file-name "Makefile"))
-       )
-      (let
-	  (
-	   (file-rel-path (file-relative-name buffer-file-name project-root-dir))
-	   )
-        (shell-command (concat "make -C " project-root-dir " html"))
-  (interactive)
-    (let
-      (
-       (buffer-name-base (file-name-base (buffer-file-name)))
-       (project-root-dir (locate-dominating-file buffer-file-name "Makefile"))
-       (target-format (read-from-minibuffer "Make (default html): " nil nil nil nil "html" nil))
-       )
-      (let
-	  (
-	   (file-rel-path (file-relative-name buffer-file-name project-root-dir))
-	   )
-	(xdg-open (expand-file-name
-		   (concat project-root-dir "_build/" target-format "/" (last (file-name-all-completions (file-name-sans-extension file-rel-path)))))))))))
+  (shell-command (concat "xdg-open " (sphinx-compile))))
 
 (defvar sphinx-mode-map
   (let ((map (make-sparse-keymap)))
