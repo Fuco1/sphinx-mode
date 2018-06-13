@@ -109,7 +109,7 @@ If BUFFER is not given use the `current-buffer'."
 
 ;; TODO: add better default
 (defun sphinx-goto-ref (ref)
-  (interactive)
+  (interactive
    (let ((ref (completing-read
                (format "Ref [default %s]: "
                        (symbol-at-point))
@@ -117,7 +117,7 @@ If BUFFER is not given use the `current-buffer'."
                        (plist-get r :name))
                      (sphinx--get-refs))
                nil nil nil nil (symbol-at-point))))
-     (list ref))
+     (list ref)))
   (-when-let (target (--first (equal (plist-get it :name) ref) (sphinx--get-refs)))
     (find-file (plist-get target :file))
     (goto-char (plist-get target :point))))
