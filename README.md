@@ -26,6 +26,6 @@ which can be tweaked by changing `sphinx-code-block-face`.
 
 By default, `C-c C-c C-c` in `rst-mode` prompts you to run `rst2html`, but Sphinx projects should be compiled by running `make` in the project directory.
 
-`sphinx-compile` locates the directory containing the Makefile and runs `make $FORMAT`, prompting you for a `$FORMAT` in the minibuffer (default html).
+`sphinx-compile` (`C-c C-x C-c`) locates the directory containing the Makefile and runs `make $FORMAT`, prompting you for a `$FORMAT` in the minibuffer (default html).
 
-`sphinx-compile-and-view` runs `sphinx-compile`, then opens with `xdg-open` the compiled version of the source file being visited by the current buffer.
+`sphinx-compile-and-view` (`C-c C-x C-v`) runs `sphinx-compile`, then opens with `xdg-open` the compiled version of the source file being visited by the current buffer.
