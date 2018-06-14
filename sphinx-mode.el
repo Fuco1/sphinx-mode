@@ -122,10 +122,32 @@ If BUFFER is not given use the `current-buffer'."
     (find-file (plist-get target :file))
     (goto-char (plist-get target :point))))
 
+(defun sphinx-compile ()
+  "Run 'make' in project root directory and prompt user for target format.
+
+Return absolute path of compiled version of current source file.
+
+To see list of target formats, run 'make help' in a shell."
+  (interactive)
+    (let ((buffer-name-base (file-name-base (buffer-file-name)))
+       (project-root-dir (locate-dominating-file buffer-file-name "Makefile"))
+       (target-format (read-string "Make (default html): " nil nil "html" nil)))
+      (let* ((file-rel-path (file-relative-name buffer-file-name project-root-dir))
+(build-directory (expand-file-name (concat project-root-dir "_build/" target-format "/"))))
+	(shell-command (concat "make -C " project-root-dir " " target-format))
+	(concat build-directory (car (file-name-all-completions (file-name-base file-rel-path) build-directory))))))
+
+(defun sphinx-compile-and-view ()
+  "Run ‘sphinx-compile’ and view compiled version of current source file with 'xdg-open'."
+  (interactive)
+  (shell-command (concat "xdg-open " (sphinx-compile))))
+
 (defvar sphinx-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "M-'") 'sphinx-goto-ref)
     (define-key map (kbd "C-c TAB") 'sphinx-insert-ref)
+    (define-key map (kbd "C-c C-x C-c") 'sphinx-compile)
+    (define-key map (kbd "C-c C-x C-v") 'sphinx-compile-and-view)
     map)
   "Sphinx-mode keymap.")
 
