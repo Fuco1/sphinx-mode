@@ -53,14 +53,22 @@ LANG is a string, and the returned major mode is a symbol."
       (if (symbolp l) (symbol-name l) l))
     "-mode")))
 
+(setq sphinx-src-directive-mode-function
+  '(("code-block" . sphinx-src--get-lang-mode)
+    ("uml"        . (lambda (value) (intern "plantuml-mode")))
+    ("graphviz"   . (lambda (value) (intern "graphviz-dot-mode")))
+    ("graph"      . (lambda (value) (intern "graphviz-dot-mode")))
+    ("digraph"    . (lambda (value) (intern "graphviz-dot-mode")))
+    ))
+
 ;; This is copy-pasted from org-src.el
-(defun sphinx-src-font-lock-fontify-block (lang start end)
+(defun sphinx-src-font-lock-fontify-block (directive value start end)
   "Fontify code block.
 
 LANG is the language used in the block.
 
 START and END specify the block position."
-  (let ((lang-mode (sphinx-src--get-lang-mode lang)))
+  (let ((lang-mode (funcall (cdr (assoc directive sphinx-src-directive-mode-function)) value)))
     (when (fboundp lang-mode)
       (let ((string (buffer-substring-no-properties start end))
             (modified (buffer-modified-p))
