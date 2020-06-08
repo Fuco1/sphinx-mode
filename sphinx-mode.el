@@ -60,7 +60,7 @@
     (error nil)))
 
 
-(defun sphinx--get-refs-from-buffer (&optional buffer)
+(defun sphinx--get-refs-from-buffer (&optional buffer file-name)
   "Get all refs from BUFFER.
 
 If BUFFER is not given use the `current-buffer'."
@@ -73,7 +73,7 @@ If BUFFER is not given use the `current-buffer'."
           (goto-char (point-min))
           (while (re-search-forward "^.. _\\(.*\\):\\s-*$" nil t)
             (push (list :name (match-string-no-properties 1)
-                        :file (buffer-file-name)
+                        :file (or (buffer-file-name) file-name)
                         :point (point)) re)))))
     (nreverse re)))
 
@@ -81,7 +81,7 @@ If BUFFER is not given use the `current-buffer'."
 (defun sphinx--get-refs ()
   "Get all available refs in the project."
   (let* ((root (locate-dominating-file (buffer-file-name) "conf.py"))
-         (sources (f-entries root (lambda (file) (f-ext-p file "rst"))))
+         (sources (f-entries root (lambda (file) (f-ext-p file "rst")) 'recursive))
          (re))
     (-each sources
       (lambda (source)
@@ -91,7 +91,7 @@ If BUFFER is not given use the `current-buffer'."
                 (push (sphinx--get-refs-from-buffer) re))
             (with-temp-buffer
               (insert-file-contents-literally source)
-              (push (sphinx--get-refs-from-buffer) re))))))
+              (push (sphinx--get-refs-from-buffer nil source) re))))))
     (apply '-concat (nreverse re))))
 
 (defun sphinx-insert-ref (ref &optional title)
