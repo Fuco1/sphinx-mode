@@ -129,13 +129,18 @@ Return absolute path of compiled version of current source file.
 
 To see list of target formats, run 'make help' in a shell."
   (interactive)
-    (let ((buffer-name-base (file-name-base (buffer-file-name)))
-       (project-root-dir (locate-dominating-file buffer-file-name "Makefile"))
-       (target-format (read-string "Make (default html): " nil nil "html" nil)))
-      (let* ((file-rel-path (file-relative-name buffer-file-name project-root-dir))
-(build-directory (expand-file-name (concat project-root-dir "_build/" target-format "/"))))
-	(shell-command (concat "make -C " project-root-dir " " target-format))
-	(concat build-directory (file-name-directory file-rel-path) (car (file-name-all-completions (file-name-base file-rel-path) (concat build-directory (file-name-directory file-rel-path))))))))
+  (let ((buffer-name-base (file-name-base (buffer-file-name)))
+        (project-root-dir (locate-dominating-file buffer-file-name "Makefile"))
+        (target-format (read-string "Make (default html): " nil nil "html" nil)))
+    (let* ((file-rel-path (file-relative-name buffer-file-name project-root-dir))
+           (build-directory (expand-file-name (concat project-root-dir "_build/" target-format "/"))))
+      (shell-command (concat "make -C " project-root-dir " " target-format))
+      (concat build-directory
+              (file-name-directory file-rel-path)
+              (car
+               (file-name-all-completions
+                (file-name-base file-rel-path)
+                (concat build-directory (file-name-directory file-rel-path))))))))
 
 (defun sphinx-compile-and-view ()
   "Run ‘sphinx-compile’ and view compiled version of current source file with 'xdg-open'."
