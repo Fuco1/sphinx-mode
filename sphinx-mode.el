@@ -71,8 +71,9 @@ If BUFFER is not given use the `current-buffer'."
         (save-restriction
           (widen)
           (goto-char (point-min))
-          (while (re-search-forward "^.. _\\(.*\\):\\s-*$" nil t)
+          (while (re-search-forward "^.. _\\(.*?\\):\\s-*\\(.*\\)?$" nil t)
             (push (list :name (match-string-no-properties 1)
+                        :ref (match-string-no-properties 2)
                         :file (or (buffer-file-name) file-name)
                         :point (point)) re)))))
     (nreverse re)))
