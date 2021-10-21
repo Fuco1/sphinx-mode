@@ -111,13 +111,16 @@ If BUFFER is not given use the `current-buffer'."
 ;; TODO: add better default
 (defun sphinx-goto-ref (ref)
   (interactive
-   (let ((ref (completing-read
-               (format "Ref [default %s]: "
-                       (symbol-at-point))
-               (-map (lambda (r)
-                       (plist-get r :name))
-                     (sphinx--get-refs))
-               nil nil nil nil (symbol-at-point))))
+   (let* ((default (cond
+                    ((thing-at-point-looking-at "`\\(.*?\\)`")
+                     (match-string 1))
+                    (t (symbol-at-point))))
+          (ref (completing-read
+                (format "Ref [default %s]: " default)
+                (-map (lambda (r)
+                        (plist-get r :name))
+                      (sphinx--get-refs))
+                nil nil nil nil default)))
      (list ref)))
   (-when-let (target (--first (equal (plist-get it :name) ref) (sphinx--get-refs)))
     (find-file (plist-get target :file))
