@@ -56,7 +56,7 @@
           (while (prog1 (looking-at-p "^$")
                    (forward-line -1)))
           (forward-line)
-          (setq block-end (point))
+          (setq block-end (1- (point)))
           (sphinx-src-font-lock-fontify-block lang block-start block-end)
           (add-face-text-property
            block-highlight-start block-end
