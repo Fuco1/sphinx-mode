@@ -49,10 +49,10 @@
                (prefix (match-string 2))
                (prefix-search (concat "^" prefix))
                block-end)
-          (while (progn
-                   (forward-line)
-                   (or (looking-at-p prefix-search)
-                       (looking-at-p "^$"))))
+          (while (and
+                  (< (forward-line) 1)
+                  (or (looking-at-p prefix-search)
+                      (looking-at-p "^$"))))
           (while (prog1 (looking-at-p "^$")
                    (forward-line -1)))
           (forward-line)
