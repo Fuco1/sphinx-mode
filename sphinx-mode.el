@@ -53,20 +53,22 @@
                (prefix (match-string 4))
                (prefix-search (format "^\\(%s\\|[[:blank:]]*$\\)" prefix))
                block-end)
-          (if (assoc directive sphinx-src-directive-mode-function)
-              (progn
-                (while (progn
-                         (forward-line)
-                         (and (< (point) (point-max))
-                              (looking-at prefix-search))))
-                (setq block-end (point))
-                (sphinx-src-font-lock-fontify-block directive value block-start block-end)
-                (add-face-text-property
-                 block-highlight-start block-end
-                 'sphinx-code-block-face 'append)))))
+          (while (and
+                  (< (forward-line) 1)
+                  (or (looking-at-p prefix-search)
+                      (looking-at-p "^$"))))
+          (while (prog1 (looking-at-p "^$")
+                   (forward-line -1)))
+          (forward-line)
+          (setq block-end (1- (point)))
+          (sphinx-src-font-lock-fontify-block directive block-start block-end)
+          (add-face-text-property
+           block-highlight-start block-end
+           'sphinx-code-block-face 'append)))
     (error nil)))
 
-(defun sphinx--get-refs-from-buffer (&optional buffer)
+
+(defun sphinx--get-refs-from-buffer (&optional buffer file-name)
   "Get all refs from BUFFER.
 
 If BUFFER is not given use the `current-buffer'."
@@ -77,9 +79,10 @@ If BUFFER is not given use the `current-buffer'."
         (save-restriction
           (widen)
           (goto-char (point-min))
-          (while (re-search-forward "^.. _\\(.*\\):\\s-*$" nil t)
+          (while (re-search-forward "^.. _\\(.*?\\):\\s-*\\(.*\\)?$" nil t)
             (push (list :name (match-string-no-properties 1)
-                        :file (buffer-file-name)
+                        :ref (match-string-no-properties 2)
+                        :file (or (buffer-file-name) file-name)
                         :point (point)) re)))))
     (nreverse re)))
 
@@ -87,7 +90,7 @@ If BUFFER is not given use the `current-buffer'."
 (defun sphinx--get-refs ()
   "Get all available refs in the project."
   (let* ((root (locate-dominating-file (buffer-file-name) "conf.py"))
-         (sources (f-entries root (lambda (file) (f-ext-p file "rst"))))
+         (sources (f-entries root (lambda (file) (f-ext-p file "rst")) 'recursive))
          (re))
     (-each sources
       (lambda (source)
@@ -97,7 +100,7 @@ If BUFFER is not given use the `current-buffer'."
                 (push (sphinx--get-refs-from-buffer) re))
             (with-temp-buffer
               (insert-file-contents-literally source)
-              (push (sphinx--get-refs-from-buffer) re))))))
+              (push (sphinx--get-refs-from-buffer nil source) re))))))
     (apply '-concat (nreverse re))))
 
 (defun sphinx-insert-ref (ref &optional title)
@@ -116,13 +119,16 @@ If BUFFER is not given use the `current-buffer'."
 ;; TODO: add better default
 (defun sphinx-goto-ref (ref)
   (interactive
-   (let ((ref (completing-read
-               (format "Ref [default %s]: "
-                       (symbol-at-point))
-               (-map (lambda (r)
-                       (plist-get r :name))
-                     (sphinx--get-refs))
-               nil nil nil nil (symbol-at-point))))
+   (let* ((default (cond
+                    ((thing-at-point-looking-at "`\\(.*?\\)`")
+                     (match-string 1))
+                    (t (symbol-at-point))))
+          (ref (completing-read
+                (format "Ref [default %s]: " default)
+                (-map (lambda (r)
+                        (plist-get r :name))
+                      (sphinx--get-refs))
+                nil nil nil nil default)))
      (list ref)))
   (-when-let (target (--first (equal (plist-get it :name) ref) (sphinx--get-refs)))
     (find-file (plist-get target :file))
@@ -135,13 +141,18 @@ Return absolute path of compiled version of current source file.
 
 To see list of target formats, run 'make help' in a shell."
   (interactive)
-    (let ((buffer-name-base (file-name-base (buffer-file-name)))
-       (project-root-dir (locate-dominating-file buffer-file-name "Makefile"))
-       (target-format (read-string "Make (default html): " nil nil "html" nil)))
-      (let* ((file-rel-path (file-relative-name buffer-file-name project-root-dir))
-(build-directory (expand-file-name (concat project-root-dir "_build/" target-format "/"))))
-	(shell-command (concat "make -C " project-root-dir " " target-format))
-	(concat build-directory (file-name-directory file-rel-path) (car (file-name-all-completions (file-name-base file-rel-path) (concat build-directory (file-name-directory file-rel-path))))))))
+  (let ((buffer-name-base (file-name-base (buffer-file-name)))
+        (project-root-dir (locate-dominating-file buffer-file-name "Makefile"))
+        (target-format (read-string "Make (default html): " nil nil "html" nil)))
+    (let* ((file-rel-path (file-relative-name buffer-file-name project-root-dir))
+           (build-directory (expand-file-name (concat project-root-dir "_build/" target-format "/"))))
+      (shell-command (concat "make -C " project-root-dir " " target-format))
+      (concat build-directory
+              (file-name-directory file-rel-path)
+              (car
+               (file-name-all-completions
+                (file-name-base file-rel-path)
+                (concat build-directory (file-name-directory file-rel-path))))))))
 
 (defun sphinx-compile-and-view ()
   "Run ‘sphinx-compile’ and view compiled version of current source file with 'xdg-open'."
