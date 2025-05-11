@@ -6,8 +6,7 @@
 ;; Maintainer: Matúš Goljer <matus.goljer@gmail.com>
 ;; Created: 11th September 2016
 ;; Keywords: languages
-;; Package-requires: ((dash "2.14.0") (f "0.20"))
-
+;; Package-Requires: ((dash "2.14.1") (f "0.20"))
 
 ;; This program is free software; you can redistribute it and/or
 ;; modify it under the terms of the GNU General Public License
